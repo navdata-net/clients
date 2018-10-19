@@ -14,6 +14,7 @@ class RTCM3toXMPP(sleekxmpp.ClientXMPP):
 
   def __init__(self, name, password):
     sleekxmpp.ClientXMPP.__init__(self, name+'@'+domain, password)
+    self.use_signals(signals=['SIGHUP', 'SIGTERM', 'SIGINT'])
     self.nick=name
     self.navdata = 'navdata@'+domain
     self.room = name+'@conference.'+domain
@@ -80,7 +81,8 @@ def getSTDIN(nrBytes = 1):
 
     try:
         STDINbyte = bytearray(sys.stdin.read(nrBytes))
-    except EOFError:
+    except:
+        logging.debug("Error on reading from STDIN.")
         return False
 
     return STDINbyte
@@ -194,6 +196,9 @@ if __name__ == "__main__":
       logging.error("Unknow message format specified in options.")
       break
 
+    if not GNSSmsg: break
     logging.info("Sending messge:\n" + str(GNSSmsg["MSG_ID"]) + ':' + binascii.hexlify(GNSSmsg["RAW"]))
     if not options.noxmit: xmpp.xmitbin(str(GNSSmsg["MSG_ID"]),GNSSmsg["RAW"])
+
+  xmpp.disconnect()
 

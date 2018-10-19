@@ -14,6 +14,7 @@ class XMPPtoGNSS(sleekxmpp.ClientXMPP):
 
   def __init__(self, name, password, source, sid):
     sleekxmpp.ClientXMPP.__init__(self, name+'@'+domain, password)
+    self.use_signals(signals=['SIGHUP', 'SIGTERM', 'SIGINT'])
     self.nick = name
     self.recipient = 'admin@navdata.net'
     self.navdata = 'navdata@'+domain
@@ -66,7 +67,12 @@ class XMPPtoGNSS(sleekxmpp.ClientXMPP):
         data[5] = data[5] | self.stationLO
         logging.debug (str(data[5]))
         logging.debug("Out Binary " + binascii.hexlify(data))
-        sys.stdout.write(data)
+        try:
+          sys.stdout.write(data)
+        except:
+          logging.error("Error sending data to STDOUT.")
+          self.disconnect()
+          return
         sys.stdout.flush()
 
 
@@ -91,6 +97,6 @@ if __name__ == '__main__':
   logging.debug("Broadcast channel: "+options.muc)
   logging.debug("Station ID: "+str(options.sid))
   xmpp = XMPPtoGNSS(options.user, options.pwd, options.muc, options.sid)
-  xmpp.connect(address=('xmpp.'+domain,5222))
-  xmpp.process(block=True)
+  if xmpp.connect(address=('xmpp.'+domain,5222)):
+    xmpp.process(block=True)
 
